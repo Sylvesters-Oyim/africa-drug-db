@@ -1,0 +1,3 @@
+﻿compound_code,assay_type,activity,measurement_type,relation,value,units,target,organism,performed_in_country,reference,source_type,source_name,source_url,doi,citation,license,source_record_id,is_example
+EXAMPLE-0001,In vitro growth inhibition,ACTIVE,IC50,=,0.42,µM,,Plasmodium falciparum 3D7,Kenya,,LITERATURE,Example Journal of Natural Products,,10.1234/example.0001,,CC BY 4.0,,TRUE
+EXAMPLE-0002,Cytotoxicity,INACTIVE,CC50,>,100,µM,HepG2 cells,,,,DATABASE,ChEMBL 35,,,,CC BY-SA 3.0,CHEMBL-ACT-EXAMPLE-0002,TRUE

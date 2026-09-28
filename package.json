@@ -12,20 +12,27 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "import": "tsx scripts/import.ts",
+    "clear-examples": "tsx scripts/clear-examples.ts",
+    "templates": "tsx scripts/generate-templates.ts",
+    "test": "tsx --test src/lib/import/*.test.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "csv-parse": "^7.0.3",
     "dotenv": "^18.0.4",
+    "exceljs": "^4.4.0",
     "next": "16.3.6",
     "pg": "^8.23.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.43",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
