@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ACTIVITY_LABEL_OPTIONS, ActivityBadge } from "@/components/ActivityBadge";
+import { ExampleBadge } from "@/components/ExampleBadge";
 import { FictionalDataNotice } from "@/components/FictionalDataNotice";
 import {
   LiveFilterForm,
@@ -16,7 +17,7 @@ import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from
 import type { Prisma } from "@/generated/prisma/client";
 import { ActivityLabel } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
-import { formatResult } from "@/lib/format";
+import { formatMeasurement } from "@/lib/format";
 import { getPage, getParam } from "@/lib/search-params";
 
 // Reads from the database at request time; never prerender at build time.
@@ -47,7 +48,7 @@ export default async function AssaysPage(props: PageProps<"/assays">) {
       orderBy: [{ compound: { name: "asc" } }, { assayType: "asc" }],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      include: { compound: { select: { id: true, name: true } } },
+      include: { compound: { select: { id: true, name: true, isExample: true } } },
     }),
     prisma.assay.count({ where }),
     prisma.assay.findMany({ distinct: ["assayType"], select: { assayType: true }, orderBy: { assayType: "asc" } }),
@@ -126,7 +127,7 @@ export default async function AssaysPage(props: PageProps<"/assays">) {
                       Assay type
                     </th>
                     <th scope="col" className="px-4 py-3">
-                      Target
+                      Target / organism
                     </th>
                     <th scope="col" className="px-4 py-3">
                       Result
@@ -136,6 +137,9 @@ export default async function AssaysPage(props: PageProps<"/assays">) {
                     </th>
                     <th scope="col" className="px-4 py-3">
                       Performed in
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Source
                     </th>
                   </tr>
                 </thead>
@@ -149,16 +153,21 @@ export default async function AssaysPage(props: PageProps<"/assays">) {
                         >
                           {a.compound.name}
                         </Link>
+                        {a.isExample || a.compound.isExample ? <ExampleBadge className="ml-2" /> : null}
                       </td>
                       <td className="px-4 py-3 text-navy">{a.assayType}</td>
-                      <td className="px-4 py-3 text-navy-muted">{a.target ?? "—"}</td>
-                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-navy-muted">
-                        {formatResult(a.resultValue, a.resultUnit)}
+                      <td className="px-4 py-3 text-navy-muted">
+                        {[a.target, a.organism].filter(Boolean).join(" · ") || "—"}
                       </td>
+                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-navy-muted">{formatMeasurement(a)}</td>
                       <td className="px-4 py-3">
                         <ActivityBadge label={a.activityLabel} />
                       </td>
                       <td className="px-4 py-3 text-navy-muted">{a.performedInCountry ?? "—"}</td>
+                      <td className="px-4 py-3 text-navy-muted">
+                        {a.sourceName ?? "—"}
+                        {a.license ? <span className="block text-xs">{a.license}</span> : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

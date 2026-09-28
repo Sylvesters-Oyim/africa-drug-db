@@ -17,8 +17,17 @@ enum ActivityLabel {
   INCONCLUSIVE
 }
 
+enum SourceType {
+  LITERATURE
+  DATABASE
+  LAB_DEPOSIT
+  OTHER
+}
+
 model Compound {
   id           String   @id @default(cuid())
+  /// Stable public code used for imports and linking assays (e.g. "ADD-0001").
+  code         String   @unique
   name         String
   smiles       String?
   inchikey     String?
@@ -30,10 +39,29 @@ model Compound {
   diseaseTags  String[]
   createdAt    DateTime @default(now())
 
+  // Provenance / licensing
+  sourceType     SourceType?
+  sourceName     String?
+  sourceUrl      String?
+  doi            String?
+  citation       String?
+  license        String?
+  sourceRecordId String?
+
+  // Origin & ABS (Nagoya Protocol / access-and-benefit-sharing)
+  countryOfOrigin String?
+  collectionDate  DateTime?
+  absPermitRef    String?
+
+  /// True for fictional demo/seed rows; real curated data should be false.
+  isExample Boolean @default(false)
+
   assays Assay[]
 
   @@index([name])
   @@index([sourceRegion])
+  @@index([isExample])
+  @@index([countryOfOrigin])
 }
 
 model Assay {
@@ -42,14 +70,33 @@ model Assay {
   compound           Compound      @relation(fields: [compoundId], references: [id], onDelete: Cascade)
   assayType          String
   target             String?
+  organism           String?
   resultValue        Float?
   resultUnit         String?
+  /// Measurement kind, e.g. IC50, EC50, MIC, Ki, % inhibition.
+  measurementType    String?
+  /// Qualifier for the measured value: =, <, >.
+  relation           String?
   activityLabel      ActivityLabel
   reference          String?
   performedInCountry String?
   createdAt          DateTime      @default(now())
 
+  // Provenance / licensing
+  sourceType     SourceType?
+  sourceName     String?
+  sourceUrl      String?
+  doi            String?
+  citation       String?
+  license        String?
+  sourceRecordId String?
+
+  /// True for fictional demo/seed rows; real curated data should be false.
+  isExample Boolean @default(false)
+
   @@index([compoundId])
   @@index([activityLabel])
   @@index([assayType])
+  @@index([isExample])
+  @@index([sourceRecordId])
 }

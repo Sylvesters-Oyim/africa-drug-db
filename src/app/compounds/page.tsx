@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DiseaseTags } from "@/components/DiseaseTags";
+import { ExampleBadge } from "@/components/ExampleBadge";
 import { FictionalDataNotice } from "@/components/FictionalDataNotice";
 import {
   LiveFilterForm,
@@ -33,7 +34,14 @@ export default async function CompoundsPage(props: PageProps<"/compounds">) {
   const page = getPage(params);
 
   const where: Prisma.CompoundWhereInput = {
-    ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { code: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : {}),
     ...(disease ? { diseaseTags: { has: disease } } : {}),
     ...(region ? { sourceRegion: region } : {}),
   };
@@ -77,7 +85,7 @@ export default async function CompoundsPage(props: PageProps<"/compounds">) {
               name="q"
               type="search"
               defaultValue={q}
-              placeholder="e.g. ADD-0001 or alkaloid"
+              placeholder="Name or code, e.g. ADD-0001"
               autoComplete="off"
               className={inputClass}
             />
@@ -147,13 +155,25 @@ export default async function CompoundsPage(props: PageProps<"/compounds">) {
                     >
                       {c.name}
                     </Link>
-                    <span className="shrink-0 rounded-full bg-navy/5 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-navy-muted">
-                      {c._count.assays} assay{c._count.assays === 1 ? "" : "s"}
+                    <span className="flex shrink-0 flex-col items-end gap-1.5">
+                      <span className="rounded-full bg-navy/5 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-navy-muted">
+                        {c._count.assays} assay{c._count.assays === 1 ? "" : "s"}
+                      </span>
+                      {c.isExample ? <ExampleBadge /> : null}
                     </span>
                   </div>
+                  {c.name.startsWith(c.code) ? null : (
+                    <p className="mt-1 font-mono text-xs font-semibold text-navy-muted">{c.code}</p>
+                  )}
                   <p className="mt-2 text-sm text-navy-muted">
-                    <span className="font-medium text-navy">Source:</span> {c.sourceRegion}
+                    <span className="font-medium text-navy">Region:</span> {c.sourceRegion}
                   </p>
+                  {c.sourceName || c.license ? (
+                    <p className="mt-1 text-sm text-navy-muted">
+                      <span className="font-medium text-navy">Source:</span>{" "}
+                      {[c.sourceName, c.license].filter(Boolean).join(" · ")}
+                    </p>
+                  ) : null}
                   <div className="mt-4">
                     <DiseaseTags tags={c.diseaseTags} />
                   </div>

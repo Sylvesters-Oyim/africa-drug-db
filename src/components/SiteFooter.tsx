@@ -10,7 +10,7 @@ export function SiteFooter() {
           </span>
           &copy; {new Date().getFullYear()} Africa Drug Discovery Database
         </p>
-        <p>Demo build: all data shown is fictional example data.</p>
+        <p>Each record lists its source and licence. Check them before reusing the data.</p>
       </div>
     </footer>
   );

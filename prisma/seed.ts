@@ -6,6 +6,8 @@
  * not represent real measurements. SMILES and InChIKey fields are left null
  * on purpose so nothing can be mistaken for a real chemical structure.
  *
+ * Only rows flagged isExample are replaced; real data is left untouched.
+ *
  * Run with: npx prisma db seed
  */
 import "dotenv/config";
@@ -278,14 +280,27 @@ const compounds: CompoundSeed[] = [
 async function main() {
   console.log("Seeding FICTIONAL example data...");
 
-  // Start from a clean slate so the seed is repeatable. Assays are removed
-  // automatically via the cascading foreign key.
-  await prisma.compound.deleteMany();
+  // Repeatable: remove previous example rows only (real data is never touched).
+  // Assays of example compounds are removed via the cascading foreign key.
+  await prisma.assay.deleteMany({ where: { isExample: true } });
+  await prisma.compound.deleteMany({ where: { isExample: true } });
+  const taken = new Set(
+    (await prisma.compound.findMany({ where: { code: { in: compounds.map((c) => c.code) } }, select: { code: true } })).map(
+      (c) => c.code,
+    ),
+  );
 
   let assayCount = 0;
+  let compoundCount = 0;
   for (const c of compounds) {
+    if (taken.has(c.code)) {
+      console.warn(`Skipping ${c.code}: code already used by a real (non-example) compound.`);
+      continue;
+    }
+    compoundCount++;
     await prisma.compound.create({
       data: {
+        code: c.code,
         name: `${c.code} ${c.label}`,
         // Intentionally null: this is fictional data and must not look like
         // real chemical structures.
@@ -295,10 +310,20 @@ async function main() {
         sourceRegion: c.sourceRegion,
         sourceNotes: c.sourceNotes,
         diseaseTags: c.diseaseTags,
+        countryOfOrigin: c.sourceRegion,
+        sourceType: "OTHER",
+        sourceName: "Fictional example seed",
+        license: "Example data — not for research use",
+        isExample: true,
         assays: {
           create: c.assays.map((a, i) => ({
             ...a,
             reference: `Fictional example dataset, record ${c.code}-A${i + 1}`,
+            sourceType: "OTHER",
+            sourceName: "Fictional example seed",
+            license: "Example data — not for research use",
+            sourceRecordId: `${c.code}-A${i + 1}`,
+            isExample: true,
           })),
         },
       },
@@ -306,7 +331,7 @@ async function main() {
     assayCount += c.assays.length;
   }
 
-  console.log(`Seeded ${compounds.length} compounds and ${assayCount} assays.`);
+  console.log(`Seeded ${compoundCount} example compounds and ${assayCount} example assays.`);
 }
 
 main()
