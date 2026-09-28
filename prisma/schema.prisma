@@ -1,0 +1,55 @@
+// Prisma schema for the Africa Drug Discovery Database (v1).
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// The connection URL is configured in prisma.config.ts (Prisma 7).
+datasource db {
+  provider = "postgresql"
+}
+
+enum ActivityLabel {
+  ACTIVE
+  INACTIVE
+  INCONCLUSIVE
+}
+
+model Compound {
+  id           String   @id @default(cuid())
+  name         String
+  smiles       String?
+  inchikey     String?
+  formula      String?
+  /// African country or region the compound was sourced from (e.g. "Kenya", "West Africa").
+  sourceRegion String
+  sourceNotes  String?
+  /// Disease tags, e.g. ["malaria", "tuberculosis"].
+  diseaseTags  String[]
+  createdAt    DateTime @default(now())
+
+  assays Assay[]
+
+  @@index([name])
+  @@index([sourceRegion])
+}
+
+model Assay {
+  id                 String        @id @default(cuid())
+  compoundId         String
+  compound           Compound      @relation(fields: [compoundId], references: [id], onDelete: Cascade)
+  assayType          String
+  target             String?
+  resultValue        Float?
+  resultUnit         String?
+  activityLabel      ActivityLabel
+  reference          String?
+  performedInCountry String?
+  createdAt          DateTime      @default(now())
+
+  @@index([compoundId])
+  @@index([activityLabel])
+  @@index([assayType])
+}
