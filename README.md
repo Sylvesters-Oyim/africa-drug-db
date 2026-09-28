@@ -221,7 +221,13 @@ npm run import -- --file data/import.xlsx --dry-run
 
 The CLI uses `DATABASE_URL` from the environment / `.env`. It prints whether the target is `local` or `REMOTE` (never
 the URL), and writing to a non-local database requires an extra `--yes`. Always dry-run against production first, for
-example `node --env-file=.env.local node_modules/.bin/tsx scripts/import.ts --file data/import.xlsx --dry-run`.
+example with the production URL in `.env.local` (from `vercel env pull`):
+
+```bash
+env -u DATABASE_URL npx tsx --env-file=.env.local scripts/import.ts --file data/import.xlsx --dry-run
+```
+
+(`env -u` matters: an already-exported `DATABASE_URL` takes precedence over `--env-file`.)
 
 ### 3b. Import in the browser
 
