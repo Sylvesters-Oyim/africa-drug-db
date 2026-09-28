@@ -1,8 +1,15 @@
+import { MoleculeIcon } from "./ScienceIcons";
+
 export function SiteFooter() {
   return (
-    <footer className="mt-auto border-t border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p>&copy; {new Date().getFullYear()} Africa Drug Discovery Database</p>
+    <footer className="relative z-10 mt-auto bg-navy text-cream">
+      <div className="container-wide flex flex-col gap-3 py-8 text-sm text-cream/85 sm:flex-row sm:items-center sm:justify-between">
+        <p className="flex items-center gap-3 font-semibold text-cream">
+          <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-xl bg-cream">
+            <MoleculeIcon className="h-6 w-6" />
+          </span>
+          &copy; {new Date().getFullYear()} Africa Drug Discovery Database
+        </p>
         <p>Demo build: all data shown is fictional example data.</p>
       </div>
     </footer>

@@ -2,9 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DiseaseTags } from "@/components/DiseaseTags";
 import { FictionalDataNotice } from "@/components/FictionalDataNotice";
-import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/form";
+import {
+  LiveFilterForm,
+  LiveFilterProvider,
+  LiveResults,
+  PendingIndicator,
+  ResetButton,
+} from "@/components/LiveFilters";
 import { PageHeader } from "@/components/PageHeader";
+import { PageShell } from "@/components/PageShell";
 import { Pagination } from "@/components/Pagination";
+import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/form";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { DISEASES } from "@/lib/diseases";
@@ -15,7 +23,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Compounds" };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 24;
 
 export default async function CompoundsPage(props: PageProps<"/compounds">) {
   const params = await props.searchParams;
@@ -49,103 +57,128 @@ export default async function CompoundsPage(props: PageProps<"/compounds">) {
   const hasFilters = Boolean(q || disease || region);
 
   return (
-    <div className="space-y-6">
+    <PageShell>
       <PageHeader
         title="Compounds"
-        description="Search compounds by name and filter by disease area or source region."
+        description="Search compounds by name and filter by disease area or source region. Results update as you type."
       />
 
-      <form
-        method="get"
-        action="/compounds"
-        className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4 lg:items-end"
-      >
-        <div>
-          <label htmlFor="q" className={labelClass}>
-            Name
-          </label>
-          <input id="q" name="q" type="search" defaultValue={q} placeholder="e.g. ADD-0001 or alkaloid" className={inputClass} />
-        </div>
-        <div>
-          <label htmlFor="disease" className={labelClass}>
-            Disease
-          </label>
-          <select id="disease" name="disease" defaultValue={disease ?? ""} className={inputClass}>
-            <option value="">All diseases</option>
-            {DISEASES.map((d) => (
-              <option key={d.tag} value={d.tag}>
-                {d.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="region" className={labelClass}>
-            Source region
-          </label>
-          <select id="region" name="region" defaultValue={region ?? ""} className={inputClass}>
-            <option value="">All regions</option>
-            {regions.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex gap-2">
-          <button type="submit" className={primaryButtonClass}>
-            Apply
-          </button>
-          {hasFilters ? (
-            <Link href="/compounds" className={secondaryButtonClass}>
-              Reset
-            </Link>
-          ) : null}
-        </div>
-      </form>
+      <LiveFilterProvider>
+        <LiveFilterForm
+          action="/compounds"
+          className="reveal card grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4 lg:items-end"
+        >
+          <div>
+            <label htmlFor="q" className={labelClass}>
+              Name
+            </label>
+            <input
+              id="q"
+              name="q"
+              type="search"
+              defaultValue={q}
+              placeholder="e.g. ADD-0001 or alkaloid"
+              autoComplete="off"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label htmlFor="disease" className={labelClass}>
+              Disease
+            </label>
+            <select id="disease" name="disease" defaultValue={disease ?? ""} className={inputClass}>
+              <option value="">All diseases</option>
+              {DISEASES.map((d) => (
+                <option key={d.tag} value={d.tag}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="region" className={labelClass}>
+              Source region
+            </label>
+            <select id="region" name="region" defaultValue={region ?? ""} className={inputClass}>
+              <option value="">All regions</option>
+              {regions.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="submit" className={primaryButtonClass}>
+              Search
+            </button>
+            {hasFilters ? (
+              <ResetButton href="/compounds" className={secondaryButtonClass}>
+                Reset
+              </ResetButton>
+            ) : null}
+          </div>
+        </LiveFilterForm>
 
-      <p className="text-sm text-slate-600" aria-live="polite">
-        {total} {total === 1 ? "compound" : "compounds"} found
-      </p>
+        <LiveResults>
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-medium text-navy-muted" aria-live="polite">
+              {total} {total === 1 ? "compound" : "compounds"} found
+            </p>
+            <PendingIndicator />
+          </div>
 
-      {compounds.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-600">
-          No compounds match these filters.
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-              <tr>
-                <th scope="col" className="px-4 py-3">Name</th>
-                <th scope="col" className="px-4 py-3">Source region</th>
-                <th scope="col" className="px-4 py-3">Diseases</th>
-                <th scope="col" className="px-4 py-3 text-right">Assays</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {compounds.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <Link href={`/compounds/${c.id}`} className="font-medium text-teal-800 hover:underline">
+          {compounds.length === 0 ? (
+            <div className="reveal rounded-2xl border border-dashed border-blush-300 bg-white/50 p-10 text-center text-navy-muted">
+              No compounds match these filters.
+            </div>
+          ) : (
+            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {compounds.map((c, i) => (
+                <li
+                  key={c.id}
+                  className="reveal card lift group flex flex-col p-5"
+                  style={{ ["--reveal-delay" as string]: `${Math.min(i, 8) * 40}ms` }}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <Link
+                      href={`/compounds/${c.id}`}
+                      className="text-lg font-bold text-navy transition group-hover:text-orange-800"
+                    >
                       {c.name}
                     </Link>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-700">{c.sourceRegion}</td>
-                  <td className="px-4 py-3">
+                    <span className="shrink-0 rounded-full bg-navy/5 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-navy-muted">
+                      {c._count.assays} assay{c._count.assays === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-navy-muted">
+                    <span className="font-medium text-navy">Source:</span> {c.sourceRegion}
+                  </p>
+                  <div className="mt-4">
                     <DiseaseTags tags={c.diseaseTags} />
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-700">{c._count.assays}</td>
-                </tr>
+                  </div>
+                  <Link
+                    href={`/compounds/${c.id}`}
+                    className="mt-5 inline-flex text-sm font-semibold text-teal-800 transition group-hover:text-orange-800"
+                  >
+                    View details →
+                  </Link>
+                </li>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </ul>
+          )}
 
-      <Pagination basePath="/compounds" page={page} pageSize={PAGE_SIZE} total={total} query={{ q, disease, region }} />
+          <Pagination
+            basePath="/compounds"
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={total}
+            query={{ q, disease, region }}
+          />
+        </LiveResults>
+      </LiveFilterProvider>
 
       <FictionalDataNotice />
-    </div>
+    </PageShell>
   );
 }

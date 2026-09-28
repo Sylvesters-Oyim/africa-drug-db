@@ -2,9 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ACTIVITY_LABEL_OPTIONS, ActivityBadge } from "@/components/ActivityBadge";
 import { FictionalDataNotice } from "@/components/FictionalDataNotice";
-import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/form";
+import {
+  LiveFilterForm,
+  LiveFilterProvider,
+  LiveResults,
+  PendingIndicator,
+  ResetButton,
+} from "@/components/LiveFilters";
 import { PageHeader } from "@/components/PageHeader";
+import { PageShell } from "@/components/PageShell";
 import { Pagination } from "@/components/Pagination";
+import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/form";
 import type { Prisma } from "@/generated/prisma/client";
 import { ActivityLabel } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
@@ -48,100 +56,121 @@ export default async function AssaysPage(props: PageProps<"/assays">) {
   const hasFilters = Boolean(activity || type);
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Assay results" description="Browse assay results across all compounds. Filter by activity and assay type." />
+    <PageShell>
+      <PageHeader
+        title="Assay results"
+        description="Browse assay results across all compounds. Filter by activity and assay type."
+      />
 
-      <form
-        method="get"
-        action="/assays"
-        className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3 sm:items-end"
-      >
-        <div>
-          <label htmlFor="activity" className={labelClass}>
-            Activity
-          </label>
-          <select id="activity" name="activity" defaultValue={activity ?? ""} className={inputClass}>
-            <option value="">All activity labels</option>
-            {ACTIVITY_LABEL_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="type" className={labelClass}>
-            Assay type
-          </label>
-          <select id="type" name="type" defaultValue={type ?? ""} className={inputClass}>
-            <option value="">All assay types</option>
-            {assayTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex gap-2">
-          <button type="submit" className={primaryButtonClass}>
-            Apply
-          </button>
-          {hasFilters ? (
-            <Link href="/assays" className={secondaryButtonClass}>
-              Reset
-            </Link>
-          ) : null}
-        </div>
-      </form>
-
-      <p className="text-sm text-slate-600" aria-live="polite">
-        {total} {total === 1 ? "assay result" : "assay results"} found
-      </p>
-
-      {assays.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-600">
-          No assay results match these filters.
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-              <tr>
-                <th scope="col" className="px-4 py-3">Compound</th>
-                <th scope="col" className="px-4 py-3">Assay type</th>
-                <th scope="col" className="px-4 py-3">Target</th>
-                <th scope="col" className="px-4 py-3">Result</th>
-                <th scope="col" className="px-4 py-3">Activity</th>
-                <th scope="col" className="px-4 py-3">Performed in</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {assays.map((a) => (
-                <tr key={a.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <Link href={`/compounds/${a.compound.id}`} className="font-medium text-teal-800 hover:underline">
-                      {a.compound.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate-900">{a.assayType}</td>
-                  <td className="px-4 py-3 text-slate-700">{a.target ?? "—"}</td>
-                  <td className="whitespace-nowrap px-4 py-3 tabular-nums text-slate-700">
-                    {formatResult(a.resultValue, a.resultUnit)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <ActivityBadge label={a.activityLabel} />
-                  </td>
-                  <td className="px-4 py-3 text-slate-700">{a.performedInCountry ?? "—"}</td>
-                </tr>
+      <LiveFilterProvider>
+        <LiveFilterForm action="/assays" className="reveal card grid gap-4 p-5 sm:grid-cols-3 sm:items-end">
+          <div>
+            <label htmlFor="activity" className={labelClass}>
+              Activity
+            </label>
+            <select id="activity" name="activity" defaultValue={activity ?? ""} className={inputClass}>
+              <option value="">All activity labels</option>
+              {ACTIVITY_LABEL_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="type" className={labelClass}>
+              Assay type
+            </label>
+            <select id="type" name="type" defaultValue={type ?? ""} className={inputClass}>
+              <option value="">All assay types</option>
+              {assayTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="submit" className={primaryButtonClass}>
+              Apply
+            </button>
+            {hasFilters ? (
+              <ResetButton href="/assays" className={secondaryButtonClass}>
+                Reset
+              </ResetButton>
+            ) : null}
+          </div>
+        </LiveFilterForm>
 
-      <Pagination basePath="/assays" page={page} pageSize={PAGE_SIZE} total={total} query={{ activity, type }} />
+        <LiveResults>
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-medium text-navy-muted" aria-live="polite">
+              {total} {total === 1 ? "assay result" : "assay results"} found
+            </p>
+            <PendingIndicator />
+          </div>
+
+          {assays.length === 0 ? (
+            <div className="reveal rounded-2xl border border-dashed border-blush-300 bg-white/50 p-10 text-center text-navy-muted">
+              No assay results match these filters.
+            </div>
+          ) : (
+            <div className="reveal overflow-x-auto rounded-2xl border border-blush-300/70 bg-white/80 shadow-soft">
+              <table className="min-w-full divide-y divide-blush-300/60 text-sm">
+                <thead className="bg-blush/40 text-left text-xs font-bold uppercase tracking-wide text-navy-muted">
+                  <tr>
+                    <th scope="col" className="px-4 py-3">
+                      Compound
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Assay type
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Target
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Result
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Activity
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Performed in
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-blush-300/40">
+                  {assays.map((a) => (
+                    <tr key={a.id} className="transition hover:bg-orange/10">
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/compounds/${a.compound.id}`}
+                          className="font-semibold text-navy hover:text-orange-800"
+                        >
+                          {a.compound.name}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-navy">{a.assayType}</td>
+                      <td className="px-4 py-3 text-navy-muted">{a.target ?? "—"}</td>
+                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-navy-muted">
+                        {formatResult(a.resultValue, a.resultUnit)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <ActivityBadge label={a.activityLabel} />
+                      </td>
+                      <td className="px-4 py-3 text-navy-muted">{a.performedInCountry ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <Pagination basePath="/assays" page={page} pageSize={PAGE_SIZE} total={total} query={{ activity, type }} />
+        </LiveResults>
+      </LiveFilterProvider>
 
       <FictionalDataNotice />
-    </div>
+    </PageShell>
   );
 }

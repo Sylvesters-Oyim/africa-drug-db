@@ -1,14 +1,207 @@
 @import "tailwindcss";
 
+/*
+ * Theme sampled from the reference illustration:
+ * cream #FBEAE2, blush circles #FDDDD0, navy #25244C, orange #F7A13A,
+ * mint #A4D09F, teal #69B1A3.
+ */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
+}
+
+@theme {
+  --color-cream-50: #fffaf7;
+  --color-cream-100: #fdf3ee;
+  --color-cream: #fbeae2;
+  --color-blush: #fdddd0;
+  --color-blush-300: #f9cdbb;
+  --color-blush-400: #f5b9a2;
+
+  --color-navy: #25244c;
+  --color-navy-900: #1a1938;
+  --color-navy-700: #3a3968;
+  --color-navy-muted: #5b5a7e;
+
+  --color-orange: #f7a13a;
+  --color-orange-100: #fde7cc;
+  --color-orange-500: #f29624;
+  --color-orange-800: #8a4200;
+
+  --color-mint: #a4d09f;
+  --color-mint-100: #e3f1e0;
+  --color-mint-800: #2b6532;
+
+  --color-teal: #69b1a3;
+  --color-teal-100: #dcefea;
+  --color-teal-800: #1e5e53;
+
+  --shadow-soft: 0 1px 2px rgb(37 36 76 / 0.04), 0 8px 24px -12px rgb(37 36 76 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(37 36 76 / 0.05), 0 18px 40px -16px rgb(37 36 76 / 0.3);
+
+  --animate-float: float 9s ease-in-out infinite;
+  --animate-float-slow: float 14s ease-in-out infinite;
+  --animate-spin-slow: spin 40s linear infinite;
+  --animate-drift: drift 22s ease-in-out infinite;
+  --animate-page-in: page-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    50% {
+      transform: translate3d(0, -14px, 0) rotate(6deg);
+    }
+  }
+  @keyframes drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(24px, -18px, 0) scale(1.04);
+    }
+  }
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+/* Wide, centred content container used by every page. */
+@utility container-wide {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1536px;
+  padding-inline: 1rem;
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 2.5rem;
+  }
+  @media (width >= 80rem) {
+    padding-inline: 3rem;
+  }
+}
+
+/* Soft white card surface. */
+@utility card {
+  border-radius: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 0.7);
+  background-color: rgb(255 255 255 / 0.72);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(6px);
+}
+
+/* Hover lift for interactive cards. */
+@utility lift {
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+@utility skeleton {
+  border-radius: 0.75rem;
+  background-image: linear-gradient(90deg, #f9d9cc 0%, #fdeee7 50%, #f9d9cc 100%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
 }
 
 :root {
   color-scheme: light;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  @apply bg-slate-50 text-slate-900;
+  @apply bg-cream text-navy;
+}
+
+::selection {
+  background-color: var(--color-orange);
+  color: var(--color-navy);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-orange);
+  outline-offset: 2px;
+}
+
+/* Scroll-reveal: only hide content when JS is running and motion is allowed. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-js] .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  html[data-js] .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Fade the hero illustration's top (and, on desktop, left) edges into the
+ * identical cream background so the salmon circles don't end in hard lines.
+ */
+.hero-fade {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 38%);
+}
+@media (width >= 64rem) {
+  .hero-fade {
+    mask-image:
+      linear-gradient(to right, transparent 0%, black 18%), linear-gradient(to bottom, transparent 0%, black 40%);
+    mask-composite: intersect;
+  }
+}
+
+/* Progress bars grow in once their card is revealed. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-js] .reveal .grow-bar {
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.25s;
+  }
+  html[data-js] .reveal.is-visible .grow-bar {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
